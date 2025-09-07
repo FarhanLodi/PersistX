@@ -5,7 +5,8 @@
   
   A high-performance persistent collection library for .NET with ACID transactions, indexing, and advanced data structures.
   
-  [![NuGet](https://img.shields.io/nuget/v/PersistX.svg)](https://www.nuget.org/packages/PersistX/1.0.0)
+  [![NuGet](https://img.shields.io/nuget/v/PersistX.svg)](https://www.nuget.org/packages/PersistX)
+  [![NuGet Downloads](https://img.shields.io/nuget/dt/PersistX.svg)](https://www.nuget.org/packages/PersistX)
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 </div>
 

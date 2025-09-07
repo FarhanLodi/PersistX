@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>PersistX</PackageId>
+		<PackageVersion>1.0.0</PackageVersion>
+		<Authors>Farhan Lodi</Authors>
+		<Description>High-performance persistent collection library with ACID transactions, indexing, and advanced data structures</Description>
+		<PackageTags>persistent;collections;database;storage;indexing;transactions</PackageTags>
+		<RepositoryUrl>https://github.com/FarhanLodi/PersistX</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageIcon>PersistX.png</PackageIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="System.Memory" Version="4.6.3" />
+		<PackageReference Include="System.Threading.Channels" Version="9.0.8" />
+		<PackageReference Include="System.IO.Compression" Version="4.3.0" />
+		<PackageReference Include="System.Text.Json" Version="9.0.8" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.8" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.8" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="assets\PersistX.png" Pack="true" PackagePath="" />
+	</ItemGroup>
+</Project>

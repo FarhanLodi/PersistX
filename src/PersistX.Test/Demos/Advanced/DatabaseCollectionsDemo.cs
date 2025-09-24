@@ -1,7 +1,7 @@
 using PersistX.Database;
 using PersistX.Collections;
 
-namespace PersistX.Test.Demos;
+namespace PersistX.Test.Demos.Advanced;
 
 /// <summary>
 /// Demonstrates database collections with advanced features like transactions and indexing

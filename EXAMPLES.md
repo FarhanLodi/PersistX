@@ -6,8 +6,9 @@ This document provides detailed examples and patterns for using PersistX in vari
 
 1. [Simple Collections Examples](#simple-collections-examples)
 2. [Database Collections Examples](#database-collections-examples)
-3. [Performance Optimization](#performance-optimization)
-4. [Real-World Applications](#real-world-applications)
+3. [Advanced Storage Features](#advanced-storage-features)
+4. [Performance Optimization](#performance-optimization)
+5. [Real-World Applications](#real-world-applications)
 
 ## Simple Collections Examples
 
@@ -254,6 +255,259 @@ catch (Exception ex)
 }
 ```
 
+## Advanced Storage Features
+
+### 1. Write-Ahead Logging (WAL) for Crash Recovery
+
+```csharp
+using PersistX.Database;
+using PersistX.Storage;
+
+// Enable WAL for crash recovery
+var config = new DatabaseConfiguration
+{
+    BackendConfiguration = new Dictionary<string, string>
+    {
+        ["FilePath"] = "crash_safe_app.db",
+        ["EnableWAL"] = "true"  // Enable Write-Ahead Logging
+    }
+};
+
+var database = new Database("CrashSafeApp", new FileStorage(), config);
+await database.InitializeAsync();
+
+// All operations are automatically logged to WAL
+var users = await database.CreateCollectionAsync<User>("users");
+await users.AddAsync(new User { Name = "John", Email = "john@example.com" });
+
+// If the application crashes, WAL will replay all committed operations on restart
+Console.WriteLine("WAL ensures no data loss even during crashes!");
+```
+
+### 2. Data Compression for Storage Efficiency
+
+```csharp
+using PersistX.Database;
+using PersistX.Storage;
+
+// Enable compression to save storage space
+var config = new DatabaseConfiguration
+{
+    BackendConfiguration = new Dictionary<string, string>
+    {
+        ["FilePath"] = "compressed_app.db",
+        ["CompressionType"] = "GZip"  // Enable GZip compression
+    }
+};
+
+var database = new Database("CompressedApp", new FileStorage(), config);
+await database.InitializeAsync();
+
+// Add data with repetitive content (compresses well)
+var logs = await database.CreateCollectionAsync<LogEntry>("logs");
+for (int i = 0; i < 1000; i++)
+{
+    await logs.AddAsync(new LogEntry
+    {
+        Message = "This is a log entry with repetitive content that compresses very well",
+        Timestamp = DateTime.UtcNow,
+        Level = "INFO"
+    });
+}
+
+// Check compression benefits
+var stats = await database.GetComprehensiveStatisticsAsync();
+Console.WriteLine($"Compression enabled: {stats.HasCompression}");
+Console.WriteLine($"Compression type: {stats.CompressionType}");
+// Typically saves 50-80% storage space for text data
+```
+
+### 3. Encryption at Rest for Security
+
+```csharp
+using PersistX.Database;
+using PersistX.Storage;
+
+// Enable encryption for sensitive data
+var config = new DatabaseConfiguration
+{
+    BackendConfiguration = new Dictionary<string, string>
+    {
+        ["FilePath"] = "secure_app.db",
+        ["EncryptionType"] = "Aes",  // Enable AES-256 encryption
+        ["EncryptionKey"] = "your-256-bit-encryption-key-here"  // Store securely!
+    }
+};
+
+var database = new Database("SecureApp", new FileStorage(), config);
+await database.InitializeAsync();
+
+// All data is automatically encrypted before storage
+var sensitiveData = await database.CreateCollectionAsync<SensitiveRecord>("sensitive");
+await sensitiveData.AddAsync(new SensitiveRecord
+{
+    SocialSecurityNumber = "123-45-6789",
+    CreditCardNumber = "4111-1111-1111-1111",
+    PersonalNotes = "This data is encrypted at rest"
+});
+
+// Data is automatically decrypted when read
+await foreach (var record in sensitiveData.GetAllAsync())
+{
+    Console.WriteLine($"SSN: {record.SocialSecurityNumber}"); // Automatically decrypted
+}
+
+Console.WriteLine("All sensitive data is encrypted at rest!");
+```
+
+### 4. Automated Backup and Restore
+
+```csharp
+using PersistX.Database;
+using PersistX.Storage;
+
+// Enable backup functionality
+var config = new DatabaseConfiguration
+{
+    BackendConfiguration = new Dictionary<string, string>
+    {
+        ["FilePath"] = "backup_app.db",
+        ["EnableBackup"] = "true"  // Enable backup functionality
+    }
+};
+
+var database = new Database("BackupApp", new FileStorage(), config);
+await database.InitializeAsync();
+
+// Add some data
+var users = await database.CreateCollectionAsync<User>("users");
+await users.AddAsync(new User { Name = "John", Email = "john@example.com" });
+await users.AddAsync(new User { Name = "Jane", Email = "jane@example.com" });
+
+// Create a backup
+var backupId = $"backup_{DateTime.UtcNow:yyyyMMdd_HHmmss}";
+var backup = await database.CreateBackupAsync(backupId);
+Console.WriteLine($"Backup created: {backup.BackupId}");
+Console.WriteLine($"Backup size: {backup.SizeBytes} bytes");
+Console.WriteLine($"Locations backed up: {backup.LocationCount}");
+
+// List all available backups
+Console.WriteLine("Available backups:");
+await foreach (var availableBackup in database.ListBackupsAsync())
+{
+    Console.WriteLine($"  - {availableBackup.BackupId} ({availableBackup.Type}) - {availableBackup.SizeBytes} bytes");
+}
+
+// Restore from backup (if needed)
+// await database.RestoreBackupAsync(backupId);
+```
+
+### 5. Comprehensive Configuration Example
+
+```csharp
+using PersistX.Database;
+using PersistX.Storage;
+
+// Enable all advanced storage features
+var config = new DatabaseConfiguration
+{
+    BackendConfiguration = new Dictionary<string, string>
+    {
+        ["FilePath"] = "enterprise_app.db",
+        
+        // Crash recovery
+        ["EnableWAL"] = "true",
+        
+        // Storage efficiency
+        ["CompressionType"] = "GZip",
+        
+        // Security
+        ["EncryptionType"] = "Aes",
+        ["EncryptionKey"] = "your-secure-256-bit-key-here",
+        
+        // Data protection
+        ["EnableBackup"] = "true"
+    }
+};
+
+var database = new Database("EnterpriseApp", new FileStorage(), config);
+await database.InitializeAsync();
+
+// Use collections normally - all features work transparently
+var users = await database.CreateCollectionAsync<User>("users");
+await users.AddAsync(new User { Name = "John", Email = "john@example.com" });
+
+// Get comprehensive statistics
+var stats = await database.GetComprehensiveStatisticsAsync();
+Console.WriteLine("Enterprise Database Statistics:");
+Console.WriteLine($"  Collections: {stats.CollectionCount}");
+Console.WriteLine($"  Storage Size: {stats.TotalStorageSize} bytes");
+Console.WriteLine($"  WAL Enabled: {stats.HasWriteAheadLog}");
+Console.WriteLine($"  WAL Size: {stats.WalSizeBytes} bytes");
+Console.WriteLine($"  Compression: {stats.HasCompression} ({stats.CompressionType})");
+Console.WriteLine($"  Encryption: {stats.HasEncryption} ({stats.EncryptionType})");
+Console.WriteLine($"  Backup: {stats.HasBackup}");
+
+// Create daily backup
+var dailyBackup = await database.CreateBackupAsync("daily_backup");
+Console.WriteLine($"Daily backup created: {dailyBackup.BackupId}");
+```
+
+### 6. Gradual Feature Adoption
+
+```csharp
+using PersistX.Database;
+using PersistX.Storage;
+
+// Start with basic configuration
+var basicConfig = new DatabaseConfiguration
+{
+    BackendConfiguration = new Dictionary<string, string>
+    {
+        ["FilePath"] = "basic_app.db"
+    }
+};
+
+var database = new Database("BasicApp", new FileStorage(), basicConfig);
+await database.InitializeAsync();
+
+// Later, upgrade to add compression
+var compressionConfig = new DatabaseConfiguration
+{
+    BackendConfiguration = new Dictionary<string, string>
+    {
+        ["FilePath"] = "compressed_app.db",
+        ["CompressionType"] = "GZip"  // Add compression
+    }
+};
+
+// Even later, add WAL for crash recovery
+var walConfig = new DatabaseConfiguration
+{
+    BackendConfiguration = new Dictionary<string, string>
+    {
+        ["FilePath"] = "crash_safe_app.db",
+        ["CompressionType"] = "GZip",  // Keep compression
+        ["EnableWAL"] = "true"         // Add WAL
+    }
+};
+
+// Finally, add encryption for security
+var secureConfig = new DatabaseConfiguration
+{
+    BackendConfiguration = new Dictionary<string, string>
+    {
+        ["FilePath"] = "secure_app.db",
+        ["CompressionType"] = "GZip",  // Keep compression
+        ["EnableWAL"] = "true",        // Keep WAL
+        ["EncryptionType"] = "Aes",    // Add encryption
+        ["EncryptionKey"] = "your-secure-key"
+    }
+};
+
+Console.WriteLine("Features can be adopted gradually as needed!");
+```
+
 ## Performance Optimization
 
 ### Batch Operations
@@ -435,12 +689,23 @@ await transactions.AddAsync(new InventoryTransaction
 
 ## Best Practices
 
+### Core Best Practices
 1. **Use batch operations** for better performance
 2. **Create indexes** for frequently searched fields
 3. **Use transactions** for data consistency
 4. **Choose appropriate storage backend** (File for persistence, Memory for speed)
 5. **Handle exceptions** properly, especially in transactions
 6. **Monitor performance** with the built-in performance tests
+
+### Advanced Storage Best Practices
+7. **Enable WAL for production** - Ensures data durability and crash recovery
+8. **Use compression for text-heavy data** - Can save 50-80% storage space
+9. **Encrypt sensitive data** - Use AES encryption for PII, financial data, etc.
+10. **Implement regular backups** - Automated backups for data protection
+11. **Monitor storage statistics** - Use `GetComprehensiveStatisticsAsync()` to track usage
+12. **Gradual feature adoption** - Start simple, add features as needed
+13. **Store encryption keys securely** - Never hardcode keys in source code
+14. **Test backup/restore procedures** - Ensure recovery works when needed
 
 ## File Organization
 

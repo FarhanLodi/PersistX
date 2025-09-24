@@ -140,7 +140,18 @@ public class PersistentCollection<T> : IPersistentCollection<T>
                 if (size > 0)
                 {
                     var data = await _backend.ReadAsync(location, 0, (int)size, cancellationToken);
-                    items = await _serializer.DeserializeAsync(data, cancellationToken);
+                    if (data.Length > 0)
+                    {
+                        try
+                        {
+                            items = await _serializer.DeserializeAsync(data, cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger?.LogWarning(ex, "Failed to deserialize existing data for collection '{Name}', starting with empty collection", _name);
+                            items = new List<T>();
+                        }
+                    }
                 }
             }
 
@@ -190,7 +201,18 @@ public class PersistentCollection<T> : IPersistentCollection<T>
                 if (size > 0)
                 {
                     var data = await _backend.ReadAsync(location, 0, (int)size, cancellationToken);
-                    existingItems = await _serializer.DeserializeAsync(data, cancellationToken);
+                    if (data.Length > 0)
+                    {
+                        try
+                        {
+                            existingItems = await _serializer.DeserializeAsync(data, cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger?.LogWarning(ex, "Failed to deserialize existing data for collection '{Name}', starting with empty collection", _name);
+                            existingItems = new List<T>();
+                        }
+                    }
                 }
             }
 
@@ -493,11 +515,32 @@ public class PersistentCollection<T> : IPersistentCollection<T>
     {
         try
         {
+            _logger?.LogDebug("Attempting to deserialize {DataLength} bytes for collection '{Name}'", data.Length, _name);
+            
+            // Log first few bytes for debugging
+            if (data.Length > 0)
+            {
+                var preview = data.Span.Slice(0, Math.Min(50, data.Length));
+                var hex = Convert.ToHexString(preview);
+                _logger?.LogDebug("Data preview (hex): {Hex}", hex);
+                
+                // Try to decode as UTF-8 to see if it's readable
+                try
+                {
+                    var text = System.Text.Encoding.UTF8.GetString(preview);
+                    _logger?.LogDebug("Data preview (text): {Text}", text);
+                }
+                catch
+                {
+                    _logger?.LogDebug("Data preview (text): [Not valid UTF-8]");
+                }
+            }
+            
             return await _serializer.DeserializeAsync(data, cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to deserialize items for collection '{Name}'", _name);
+            _logger?.LogError(ex, "Failed to deserialize items for collection '{Name}'. Data length: {DataLength}", _name, data.Length);
             return new List<T>();
         }
     }

@@ -1,6 +1,6 @@
 using PersistX.FileBased;
 
-namespace PersistX.Test.Demos;
+namespace PersistX.Test.Demos.Basic;
 
 /// <summary>
 /// Demonstrates file-based persistent collections (List, Dictionary, Set)

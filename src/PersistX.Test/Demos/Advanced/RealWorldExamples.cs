@@ -2,7 +2,7 @@ using PersistX.FileBased;
 using PersistX.Database;
 using PersistX.Collections;
 
-namespace PersistX.Test.Examples;
+namespace PersistX.Test.Demos.Advanced;
 
 /// <summary>
 /// Real-world examples showing how to use PersistX in practical applications

@@ -1,4 +1,5 @@
 using System.Collections;
+using PersistX.Enums;
 
 namespace PersistX.Interfaces;
 
@@ -71,69 +72,3 @@ public interface ISavepoint
     DateTime CreatedAt { get; }
 }
 
-/// <summary>
-/// Transaction isolation levels.
-/// </summary>
-public enum IsolationLevel
-{
-    /// <summary>
-    /// Read uncommitted - allows dirty reads.
-    /// </summary>
-    ReadUncommitted,
-
-    /// <summary>
-    /// Read committed - prevents dirty reads.
-    /// </summary>
-    ReadCommitted,
-
-    /// <summary>
-    /// Repeatable read - prevents dirty and non-repeatable reads.
-    /// </summary>
-    RepeatableRead,
-
-    /// <summary>
-    /// Serializable - highest isolation level, prevents all anomalies.
-    /// </summary>
-    Serializable,
-
-    /// <summary>
-    /// Snapshot isolation - uses MVCC for consistent reads.
-    /// </summary>
-    Snapshot
-}
-
-/// <summary>
-/// Transaction states.
-/// </summary>
-public enum TransactionState
-{
-    /// <summary>
-    /// Transaction is active and can accept operations.
-    /// </summary>
-    Active,
-
-    /// <summary>
-    /// Transaction is being committed.
-    /// </summary>
-    Committing,
-
-    /// <summary>
-    /// Transaction has been committed successfully.
-    /// </summary>
-    Committed,
-
-    /// <summary>
-    /// Transaction is being rolled back.
-    /// </summary>
-    RollingBack,
-
-    /// <summary>
-    /// Transaction has been rolled back.
-    /// </summary>
-    RolledBack,
-
-    /// <summary>
-    /// Transaction has been aborted due to an error.
-    /// </summary>
-    Aborted
-}

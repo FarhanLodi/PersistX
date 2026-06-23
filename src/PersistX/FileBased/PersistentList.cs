@@ -15,6 +15,7 @@ public class PersistentList<T>
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
+    private List<T>? _cache = null;
 
     /// <summary>
     /// Creates a new persistent list that saves to the specified file path.
@@ -161,7 +162,15 @@ public class PersistentList<T>
     /// </summary>
     public async Task ClearAsync(CancellationToken cancellationToken = default)
     {
-        await SaveAsync(new List<T>(), cancellationToken);
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            await SaveAsync(new List<T>(), cancellationToken);
+        }
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     /// <summary>
@@ -259,6 +268,11 @@ public class PersistentList<T>
 
     private async Task<List<T>> LoadAsync(CancellationToken cancellationToken)
     {
+        if (_cache != null)
+        {
+            return _cache;
+        }
+
         if (!File.Exists(_filePath))
         {
             return new List<T>();
@@ -268,7 +282,8 @@ public class PersistentList<T>
         {
             await using var stream = File.Open(_filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var result = await JsonSerializer.DeserializeAsync<List<T>>(stream, _jsonOptions, cancellationToken);
-            return result ?? new List<T>();
+            _cache = result ?? new List<T>();
+            return _cache;
         }
         catch (JsonException)
         {
@@ -288,5 +303,6 @@ public class PersistentList<T>
         await using var stream = File.Open(_filePath, FileMode.Create, FileAccess.Write, FileShare.None);
         await JsonSerializer.SerializeAsync(stream, data, _jsonOptions, cancellationToken);
         await stream.FlushAsync(cancellationToken);
+        _cache = data;
     }
 }

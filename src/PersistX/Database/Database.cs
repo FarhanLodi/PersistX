@@ -17,6 +17,7 @@ public class Database : IDatabase
     private readonly DatabaseConfiguration _configuration;
     private bool _disposed;
     private bool _initialized;
+    private readonly DateTime _createdAt = DateTime.UtcNow;
 
     public string Name { get; }
     public IBackend Backend { get; }
@@ -172,17 +173,21 @@ public class Database : IDatabase
         }
 
         // Also check for collections in storage that might not be loaded
-        await foreach (var location in Backend.ListLocationsAsync("collections/*", cancellationToken))
+        await foreach (var location in Backend.ListLocationsAsync("*.data", cancellationToken))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
-                
-            var name = location.Split('/').LastOrDefault();
+
+            var fileName = location.Split('/').LastOrDefault() ?? string.Empty;
+            var name = fileName.EndsWith(".data", StringComparison.OrdinalIgnoreCase)
+                ? fileName[..^".data".Length]
+                : fileName;
+
             if (!string.IsNullOrEmpty(name) && !_collections.ContainsKey(name))
             {
                 yield return name;
             }
-            
+
             await Task.Yield();
         }
     }
@@ -260,7 +265,7 @@ public class Database : IDatabase
         {
             CollectionCount = _collections.Count,
             ActiveTransactionCount = _transactionManager.GetActiveTransactions().Count,
-            CreatedAt = DateTime.UtcNow, // This should be stored and retrieved from metadata
+            CreatedAt = _createdAt,
             LastMaintenance = DateTime.UtcNow // This should be stored and retrieved from metadata
         };
 

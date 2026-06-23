@@ -15,6 +15,7 @@ public class HashIndex<TKey, TValue> : IIndex<TKey, TValue> where TKey : notnull
     private readonly ILogger<HashIndex<TKey, TValue>>? _logger;
     private readonly ConcurrentDictionary<TKey, List<TValue>> _index = new();
     private readonly Func<TValue, TKey> _keySelector;
+    private readonly object _listLock = new();
     private bool _disposed;
 
     public string Name { get; }
@@ -43,13 +44,11 @@ public class HashIndex<TKey, TValue> : IIndex<TKey, TValue> where TKey : notnull
     {
         ThrowIfDisposed();
 
-        _index.AddOrUpdate(key,
-            new List<TValue> { value },
-            (k, existingList) =>
-            {
-                existingList.Add(value);
-                return existingList;
-            });
+        var list = _index.GetOrAdd(key, _ => new List<TValue>());
+        lock (_listLock)
+        {
+            list.Add(value);
+        }
 
         await Task.CompletedTask;
     }
@@ -60,10 +59,13 @@ public class HashIndex<TKey, TValue> : IIndex<TKey, TValue> where TKey : notnull
 
         if (_index.TryGetValue(key, out var values))
         {
-            values.Remove(value);
-            if (values.Count == 0)
+            lock (_listLock)
             {
-                _index.TryRemove(key, out _);
+                values.Remove(value);
+                if (values.Count == 0)
+                {
+                    _index.TryRemove(key, out _);
+                }
             }
         }
 
@@ -77,21 +79,22 @@ public class HashIndex<TKey, TValue> : IIndex<TKey, TValue> where TKey : notnull
         // Remove from old key
         if (_index.TryGetValue(oldKey, out var oldValues))
         {
-            oldValues.Remove(value);
-            if (oldValues.Count == 0)
+            lock (_listLock)
             {
-                _index.TryRemove(oldKey, out _);
+                oldValues.Remove(value);
+                if (oldValues.Count == 0)
+                {
+                    _index.TryRemove(oldKey, out _);
+                }
             }
         }
 
         // Add to new key
-        _index.AddOrUpdate(newKey,
-            new List<TValue> { value },
-            (k, existingList) =>
-            {
-                existingList.Add(value);
-                return existingList;
-            });
+        var newList = _index.GetOrAdd(newKey, _ => new List<TValue>());
+        lock (_listLock)
+        {
+            newList.Add(value);
+        }
 
         await Task.CompletedTask;
     }

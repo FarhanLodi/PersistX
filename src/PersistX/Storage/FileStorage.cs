@@ -114,8 +114,7 @@ public class FileStorage : IBackend
         ThrowIfDisposed();
         
         var searchPattern = pattern ?? "*";
-        var searchPath = Path.Combine(_basePath, "**", searchPattern);
-        
+
         var files = Directory.GetFiles(_basePath, searchPattern, SearchOption.AllDirectories);
         
         foreach (var file in files)
@@ -133,11 +132,7 @@ public class FileStorage : IBackend
     public async Task FlushAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
-        foreach (var fileStream in _openFiles.Values)
-        {
-            await fileStream.FlushAsync(cancellationToken);
-        }
+        await Task.CompletedTask;
     }
 
     public async ValueTask DisposeAsync()
@@ -146,13 +141,6 @@ public class FileStorage : IBackend
             return;
 
         _disposed = true;
-
-        // Close all open files
-        foreach (var fileStream in _openFiles.Values)
-        {
-            await fileStream.DisposeAsync();
-        }
-        _openFiles.Clear();
 
         // Dispose memory mapped files
         foreach (var mmf in _memoryMappedFiles.Values)

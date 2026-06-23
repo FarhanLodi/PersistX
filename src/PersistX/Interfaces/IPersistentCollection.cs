@@ -25,11 +25,6 @@ public interface IPersistentCollection<T> : IAsyncDisposable, IAsyncEnumerable<T
     bool IsReadOnly { get; }
 
     /// <summary>
-    /// Gets the serializer used by this collection.
-    /// </summary>
-    ISerializer<T> Serializer { get; }
-
-    /// <summary>
     /// Clears all elements from the collection.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
@@ -56,6 +51,21 @@ public interface IPersistentCollection<T> : IAsyncDisposable, IAsyncEnumerable<T
     /// <param name="items">The elements to add</param>
     /// <param name="cancellationToken">Cancellation token</param>
     Task AddRangeAsync(IEnumerable<T> items, CancellationToken cancellationToken = default);
+
+    /// <summary>Removes a specific item. Returns true if removed.</summary>
+    Task<bool> RemoveAsync(T item, CancellationToken cancellationToken = default);
+
+    /// <summary>Removes all items matching predicate. Returns count removed.</summary>
+    Task<int> RemoveWhereAsync(Func<T, bool> predicate, CancellationToken cancellationToken = default);
+
+    /// <summary>Updates all items matching predicate using the update action. Returns count updated.</summary>
+    Task<int> UpdateWhereAsync(Func<T, bool> predicate, Action<T> update, CancellationToken cancellationToken = default);
+
+    /// <summary>Returns first item matching predicate, or default.</summary>
+    Task<T?> FirstOrDefaultAsync(Func<T, bool> predicate, CancellationToken cancellationToken = default);
+
+    /// <summary>Streams items matching predicate.</summary>
+    IAsyncEnumerable<T> WhereAsync(Func<T, bool> predicate, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all elements in the collection.
